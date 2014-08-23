@@ -1,0 +1,24 @@
+{
+  "name": "huginn-production",
+  "description": "Huginn Production Environment",
+
+  "chef_type": "role",
+  "json_class": "Chef::Role",
+
+  "default_attributes": {
+    "huginn": {
+      "database_password": "CHANGEME"
+    }
+  },
+  "override_attributes": { },
+
+  "run_list": [
+    "recipe[git]",
+    "recipe[nodejs::nodejs_from_binary]",
+    "recipe[nginx]",
+    "recipe[mysql::server]",
+    "recipe[huginn::setup_ruby]",
+    "recipe[huginn::setup_user]",
+    "recipe[huginn::setup_huginn]"
+  ]
+}

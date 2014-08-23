@@ -1,0 +1,21 @@
+name 'Huginn'
+description 'Cookbook for deploying Huginn'
+
+version '0.0.1'
+
+maintainer "Glenn 'devalias' Grant"
+maintainer_email 'glenn@devalias.net'
+
+supports 'centos'
+#supports 'ubuntu', '>= x.yz'
+
+license 'MIT'
+
+#long_description <<-EOH
+#EOH
+
+depends 'rbenv'
+depends 'sudo'
+#depends 'application'
+#depends 'application_ruby'
+#depends 'application_nginx'
