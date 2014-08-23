@@ -27,6 +27,15 @@ application "huginn" do
   # scm_provider Chef::Provider::Git # is the default, for svn: Chef::Provider::Subversion
 
   before_migrate do
+    # Purge old .ruby-version
+    %w(shared/.ruby-version current/.ruby-version).each do |path|
+      file "#{node['huginn']['deploy_user']['home']}/#{path}" do
+        action :delete
+        force_unlink true
+      end
+    end
+
+    # Write the current ruby version to the .ruby-version file in shared
     file "#{node['huginn']['deploy_user']['home']}/shared/.ruby-version" do
       owner node['huginn']['deploy_user']['name']
       group node['huginn']['deploy_user']['group']
@@ -34,20 +43,26 @@ application "huginn" do
       content node['huginn']['ruby_version']
     end
 
-    rbenv_execute "create/seed db" do
-      ruby_version node['huginn']['ruby_version']
-      cwd "#{node['huginn']['deploy_user']['home']}/current"
-      command <<-EOH
-        bundler exec rake db:create && bundler exec rake db:migrate && bundler exec rake db:seed && echo 1 > #{node['huginn']['deploy_user']['home']}/shared/RAKE-DB-CREATED
-      EOH
+    # Symlink .ruby-version file into current
+    link "#{node['huginn']['deploy_user']['home']}/current/.ruby-version" do
+      to "#{node['huginn']['deploy_user']['home']}/shared/.ruby-version"
     end
+
+    # TODO Bundler install before create/seed db?
+
+    # rbenv_execute "create/seed db" do
+    #   ruby_version node['huginn']['ruby_version']
+    #   cwd "#{node['huginn']['deploy_user']['home']}/current"
+    #   command <<-EOH
+    #     bundler exec rake db:create && bundler exec rake db:migrate && bundler exec rake db:seed && echo 1 > #{node['huginn']['deploy_user']['home']}/shared/RAKE-DB-CREATED
+    #   EOH
+    # end
 
   end
 
-  symlink_before_migrate({
-    ".ruby-version" => ".ruby-version",
-    "config/database.yml" => "config/database.yml"
-  })
+  # symlink_before_migrate({
+  #   "config/database.yml" => "config/database.yml"
+  # })
 
   migrate true
   # migration_command "bundle exec rake db:migrate --trace"
