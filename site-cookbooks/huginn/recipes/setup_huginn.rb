@@ -1,3 +1,5 @@
+node_database_password = node['huginn']['database_password'] # Set this here since it doesn't seem to like using the hash directly later
+
 #deploy node['huginn']['deploy_user']['home'] do
 application "huginn" do
   path node['huginn']['deploy_user']['home']
@@ -5,13 +7,16 @@ application "huginn" do
   repository node['huginn']['repository']
   revision node['huginn']['revision']
   #keep_releases node['huginn']['keep_releases']
-  rollback_on_error true
+  rollback_on_error false # true TODO CHANGEME
 
   #user node['huginn']['deploy_user']['name']
   owner node['huginn']['deploy_user']['name']
   group node['huginn']['deploy_user']['group']
 
-  environment "RAILS_ENV" => node['huginn']['rails_env']
+  environment "RAILS_ENV" => node['huginn']['rails_env'], "RBENV_VERSION" => node['huginn']['ruby_version']
+
+  migrate true
+  # migration_command "bundle exec rake db:migrate --trace"
 
   #restart_command ""
 
@@ -21,53 +26,131 @@ application "huginn" do
   # environment "RAILS_ENV" => "production", "OTHER_ENV" => "foo"
   # shallow_clone true
 
-  action :force_deploy #:deploy # or :rollback
+  action :deploy #:force_deploy # or :rollback
   # restart_command "touch tmp/restart.txt"
   # git_ssh_wrapper "wrap-ssh4git.sh"
   # scm_provider Chef::Provider::Git # is the default, for svn: Chef::Provider::Subversion
 
+  # before_migrate do
+
+  #   # rbenv_execute "create/seed db" do
+  #   #   ruby_version node['huginn']['ruby_version']
+  #   #   cwd "#{node['huginn']['deploy_user']['home']}/current"
+  #   #   command <<-EOH
+  #   #     bundler exec rake db:create && bundler exec rake db:migrate && bundler exec rake db:seed && echo 1 > #{node['huginn']['deploy_user']['home']}/shared/RAKE-DB-CREATED
+  #   #   EOH
+  #   # end
+
+  # end
+
   before_migrate do
-    # Purge old .ruby-version
-    %w(shared/.ruby-version current/.ruby-version).each do |path|
-      file "#{node['huginn']['deploy_user']['home']}/#{path}" do
-        action :delete
-        force_unlink true
-      end
+    # log release_path
+    # log new_resource.to_yaml
+
+    rbenv_execute "create-rake-secret" do
+      user node['huginn']['deploy_user']['name']
+      cwd release_path
+
+      ruby_version node['huginn']['ruby_version']
+      creates "#{node['huginn']['deploy_user']['home']}/current/rakesecret"
+
+      command <<-EOH
+      rake secret > #{node['huginn']['deploy_user']['home']}/current/rakesecret
+      EOH
     end
 
-    # Write the current ruby version to the .ruby-version file in shared
-    file "#{node['huginn']['deploy_user']['home']}/shared/.ruby-version" do
-      owner node['huginn']['deploy_user']['name']
-      group node['huginn']['deploy_user']['group']
-      action :create
-      content node['huginn']['ruby_version']
+    bash "remove-old-dotenv" do
+      user node['huginn']['deploy_user']['name']
+      cwd "#{node['huginn']['deploy_user']['home']}/shared"
+
+      code <<-EOH
+      rm -f dotenv
+      EOH
     end
 
-    # Symlink .ruby-version file into current
-    link "#{node['huginn']['deploy_user']['home']}/current/.ruby-version" do
-      to "#{node['huginn']['deploy_user']['home']}/shared/.ruby-version"
+    bash "copy-example-dotenv" do
+      user node['huginn']['deploy_user']['name']
+      cwd release_path
+
+      code <<-EOH
+      cp .env.example #{node['huginn']['deploy_user']['home']}/shared/dotenv
+      EOH
     end
 
-    # TODO Bundler install before create/seed db?
+    bash "configure-dotenv" do
+      user node['huginn']['deploy_user']['name']
+      cwd "#{node['huginn']['deploy_user']['home']}/shared"
 
-    # rbenv_execute "create/seed db" do
-    #   ruby_version node['huginn']['ruby_version']
-    #   cwd "#{node['huginn']['deploy_user']['home']}/current"
-    #   command <<-EOH
-    #     bundler exec rake db:create && bundler exec rake db:migrate && bundler exec rake db:seed && echo 1 > #{node['huginn']['deploy_user']['home']}/shared/RAKE-DB-CREATED
+      code <<-'EOH'
+      #sed -i 's/^\(APP_SECRET_TOKEN\s*=\s*\).*$/\1TODO/' dotenv
+      sed -i 's/^\(SMTP_DOMAIN\s*=\s*\).*$/\1TODO/' dotenv
+      sed -i 's/^\(SMTP_USER_NAME\s*=\s*\).*$/\1TODO/' dotenv
+      sed -i 's/^\(SMTP_PASSWORD\s*=\s*\).*$/\1TODO/' dotenv
+      sed -i 's/^\(SMTP_SERVER\s*=\s*\).*$/\1TODO/' dotenv
+      sed -i 's/^\(SMTP_PORT\s*=\s*\).*$/\1TODO/' dotenv
+      sed -i 's/^\(SMTP_AUTHENTICATION\s*=\s*\).*$/\1TODO/' dotenv
+      sed -i 's/^\(SMTP_ENABLE_STARTTLS_AUTO\s*=\s*\).*$/\1TODO/' dotenv
+      sed -i 's/^\(EMAIL_FROM_ADDRESS\s*=\s*\).*$/\1TODO/' dotenv
+      EOH
+    end
+
+    # bash "create-dotenv" do
+    #   cwd "#{node['huginn']['deploy_user']['home']}/shared/"
+    #   code <<-EOH
+    #   rm -f dotenv1 && touch dotenv1
+    #   echo test >> dotenv1
+    #   echo APP_SECRET_TOKEN=REPLACE_ME_NOW! >> dotenv1
+    #   echo DOMAIN=localhost:3000 >> dotenv1
+    #   echo RAILS_ENV=production >> dotenv1
+    #   echo FORCE_SSL=false >> dotenv1
+    #   echo INVITATION_CODE=try-huginn >> dotenv1
+    #   echo SMTP_DOMAIN=your-domain-here.com >> dotenv1
+    #   echo SMTP_USER_NAME=you@gmail.com >> dotenv1
+    #   echo SMTP_PASSWORD=somepassword >> dotenv1
+    #   echo SMTP_SERVER=smtp.gmail.com >> dotenv1
+    #   echo SMTP_PORT=587 >> dotenv1
+    #   echo SMTP_AUTHENTICATION=plain >> dotenv1
+    #   echo SMTP_ENABLE_STARTTLS_AUTO=true >> dotenv1
+    #   echo EMAIL_FROM_ADDRESS=from_address@gmail.com >> dotenv1
+    #   echo AGENT_LOG_LENGTH=200 >> dotenv1
+    #   echo TWITTER_OAUTH_KEY= >> dotenv1
+    #   echo TWITTER_OAUTH_SECRET= >> dotenv1
+    #   echo THIRTY_SEVEN_SIGNALS_OAUTH_KEY= >> dotenv1
+    #   echo THIRTY_SEVEN_SIGNALS_OAUTH_SECRET= >> dotenv1
+    #   echo GITHUB_OAUTH_KEY= >> dotenv1
+    #   echo GITHUB_OAUTH_SECRET= >> dotenv1
+    #   echo AWS_ACCESS_KEY_ID="your aws access key id" >> dotenv1
+    #   echo AWS_ACCESS_KEY="your aws access key" >> dotenv1
+    #   echo AWS_SANDBOX=false >> dotenv1
     #   EOH
     # end
 
+    # bash "before-migrate-inline" do
+    #   code <<-EOH
+    #   pwd > /home/huginn/inline-curdir.test
+    #   EOH
+    # end
+
+    # file "/home/huginn/inline-releasepath.test" do
+    #   content release_path
+    #   action :create
+    # end
+
+    # file "/home/huginn/inline-newresource.test" do
+    #   content new_resource.to_yaml
+    #   action :create
+    # end
   end
 
-  # symlink_before_migrate({
-  #   "config/database.yml" => "config/database.yml"
-  # })
+  symlink_before_migrate({
+    #"config/database.yml" => "config/database.yml",
+    "dotenv" => ".env"
+  })
 
-  migrate true
-  # migration_command "bundle exec rake db:migrate --trace"
+  # create_dirs_before_symlink
 
   before_symlink do
+    # Replace this with create_dirs_before_symlink?
     %w(config log tmp tmp/pids tmp/sockets).each do |dir|
       directory "#{node['huginn']['deploy_user']['home']}/shared/#{dir}" do
         owner node['huginn']['deploy_user']['name']
@@ -99,11 +182,10 @@ application "huginn" do
       supports :restart => true, :start => true, :stop => true#, :reload => true
       action :enable
     end
-
   end
 
   symlinks({
-    "log" => "log",
+    # "log" => "log",
     #{}"config/Procfile" => "Procfile",
     #{}"config/.env" => ".env",
     "config/unicorn.rb" => "config/unicorn.rb"
@@ -111,7 +193,24 @@ application "huginn" do
 
   rails do
     bundler true
-    bundle_command "rbenv exec bundle"
+    # bundle_command "rbenv exec bundle"
+    # bundle_command "bundle"
+
+    # precompile_assets true
+
+    symlink_logs true
+
+    # symlink_before_migrate({
+    #   # "config/database.yml" => "config/database.yml",
+    #   ".ruby-version" => ".ruby-version"
+    # })
+
+    database_template "database.yml.erb"
+
+    database do
+      password node_database_password
+    end
+
   end
 
 end

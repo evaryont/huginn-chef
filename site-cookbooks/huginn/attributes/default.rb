@@ -5,6 +5,8 @@ default['huginn']['deploy_user']['group'] = "huginn"
 default['huginn']['deploy_user']['home'] = "/home/huginn"
 default['huginn']['deploy_user']['shell'] = "/bin/bash"
 
+default['huginn']['database_password'] = "password"
+
 default['huginn']['repository'] = "https://github.com/cantino/huginn.git"
 default['huginn']['branch'] = "master"
 default['huginn']['revision'] = "HEAD"
