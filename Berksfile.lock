@@ -1,6 +1,8 @@
 DEPENDENCIES
   application_ruby (~> 3.0.2)
   git (~> 4.0.2)
+  huginn
+    path: site-cookbooks/huginn
   mysql (~> 5.3.6)
   nginx (~> 2.7.4)
   nodejs (~> 2.1.0)
@@ -38,6 +40,12 @@ GRAPH
     windows (>= 0.0.0)
     yum (~> 3.0)
     yum-epel (>= 0.0.0)
+  huginn (0.0.1)
+    application (>= 0.0.0)
+    application_ruby (>= 0.0.0)
+    git (>= 0.0.0)
+    rbenv (>= 0.0.0)
+    sudo (>= 0.0.0)
   iptables (0.13.2)
   logrotate (1.6.0)
   mysql (5.3.6)

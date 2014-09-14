@@ -10,3 +10,5 @@ cookbook 'nodejs', '~> 2.1.0'
 cookbook 'rbenv', '~> 1.7.1'
 #cookbook 'application_nginx', '~> 2.0.2'
 cookbook 'application_ruby', '~> 3.0.2'
+
+cookbook 'huginn', path: 'site-cookbooks/huginn'
