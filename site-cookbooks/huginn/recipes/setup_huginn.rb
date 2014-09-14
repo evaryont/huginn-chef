@@ -44,21 +44,72 @@ application "huginn" do
   # end
 
   before_migrate do
-    # log release_path
-    # log new_resource.to_yaml
+    # From https://github.com/poise/application_ruby/blob/master/providers/rails.rb
+    Chef::Log.info "Running bundle install"
+    directory "#{new_resource.path}/shared/vendor_bundle" do
+      owner new_resource.owner
+      group new_resource.group
+      mode '0755'
+    end
+    directory "#{new_resource.release_path}/vendor" do
+      owner new_resource.owner
+      group new_resource.group
+      mode '0755'
+    end
+    link "#{new_resource.release_path}/vendor/bundle" do
+      to "#{new_resource.path}/shared/vendor_bundle"
+    end
 
+    common_groups = %w{development test cucumber staging}
+    bundle_command = "bundle install --path=vendor/bundle --without #{common_groups}"
+
+    rbenv_execute "bundle-install" do
+      cwd new_resource.release_path
+      user new_resource.owner
+
+      ruby_version node['huginn']['ruby_version']
+
+      command bundle_command
+    end
+
+    # rbenv_execute "bundle-install" do
+    #   user node['huginn']['deploy_user']['name']
+    #   cwd release_path
+
+    #   ruby_version node['huginn']['ruby_version']
+    #   creates "#{node['huginn']['deploy_user']['home']}/shared/rakesecret"
+
+    #   command <<-EOH
+    #   bundle install --without development test cucumber staging mysql
+    #   EOH
+    # end
+
+    # bash "link-vendor-bundle" do
+    #   user node['huginn']['deploy_user']['name']
+    #   cwd "#{release_path}/vendor"
+
+    #   only_if
+
+    #   code <<-EOH
+    #   rm -f bundle
+    #   ln -s #{node['huginn']['deploy_user']['home']}/shared/vendor_bundle bundle
+    #   EOH
+    # end
+
+    Chef::Log.info "Creating rake secret (if required)"
     rbenv_execute "create-rake-secret" do
       user node['huginn']['deploy_user']['name']
       cwd release_path
 
       ruby_version node['huginn']['ruby_version']
-      creates "#{node['huginn']['deploy_user']['home']}/current/rakesecret"
+      creates "#{node['huginn']['deploy_user']['home']}/shared/rakesecret"
 
       command <<-EOH
-      rake secret > #{node['huginn']['deploy_user']['home']}/current/rakesecret
+      bundle rake secret > #{node['huginn']['deploy_user']['home']}/shared/rakesecret
       EOH
     end
 
+    Chef::Log.info "Removing old dotenv config file"
     bash "remove-old-dotenv" do
       user node['huginn']['deploy_user']['name']
       cwd "#{node['huginn']['deploy_user']['home']}/shared"
@@ -68,6 +119,7 @@ application "huginn" do
       EOH
     end
 
+    Chef::Log.info "Copying .env.example to dotenv"
     bash "copy-example-dotenv" do
       user node['huginn']['deploy_user']['name']
       cwd release_path
@@ -77,6 +129,7 @@ application "huginn" do
       EOH
     end
 
+    Chef::Log.info "Configuring new dotenv config file"
     bash "configure-dotenv" do
       user node['huginn']['deploy_user']['name']
       cwd "#{node['huginn']['deploy_user']['home']}/shared"
@@ -174,6 +227,7 @@ application "huginn" do
     rbenv_execute "export huginn service" do
       ruby_version node['huginn']['ruby_version']
       cwd "#{node['huginn']['deploy_user']['home']}/current"
+
       command "bundler exec foreman export upstart /etc/init -a huginn -u #{node['huginn']['deploy_user']['name']} -l log"
     end
 
