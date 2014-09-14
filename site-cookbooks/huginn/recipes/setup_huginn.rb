@@ -134,8 +134,11 @@ application "huginn" do
       user new_resource.owner
       cwd "#{new_resource.path}/shared"
 
-      code <<-'EOH'
-      #sed -i 's/^\(APP_SECRET_TOKEN\s*=\s*\).*$/\1TODO/' dotenv
+      code %{
+      rakesecret=$(cat rakesecret)
+      echo $rakesecret > output
+      sed -i "s/^\(APP_SECRET_TOKEN\s*=\s*\).*$/\1$rakesecret/" dotenv
+
       sed -i 's/^\(SMTP_DOMAIN\s*=\s*\).*$/\1TODO/' dotenv
       sed -i 's/^\(SMTP_USER_NAME\s*=\s*\).*$/\1TODO/' dotenv
       sed -i 's/^\(SMTP_PASSWORD\s*=\s*\).*$/\1TODO/' dotenv
@@ -144,7 +147,7 @@ application "huginn" do
       sed -i 's/^\(SMTP_AUTHENTICATION\s*=\s*\).*$/\1TODO/' dotenv
       sed -i 's/^\(SMTP_ENABLE_STARTTLS_AUTO\s*=\s*\).*$/\1TODO/' dotenv
       sed -i 's/^\(EMAIL_FROM_ADDRESS\s*=\s*\).*$/\1TODO/' dotenv
-      EOH
+      }
     end
 
     Chef::Log.info "Running rake db:create (if required)"
