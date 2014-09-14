@@ -72,30 +72,6 @@ application "huginn" do
       command bundle_command
     end
 
-    # rbenv_execute "bundle-install" do
-    #   user node['huginn']['deploy_user']['name']
-    #   cwd release_path
-
-    #   ruby_version node['huginn']['ruby_version']
-    #   creates "#{node['huginn']['deploy_user']['home']}/shared/rakesecret"
-
-    #   command <<-EOH
-    #   bundle install --without development test cucumber staging mysql
-    #   EOH
-    # end
-
-    # bash "link-vendor-bundle" do
-    #   user node['huginn']['deploy_user']['name']
-    #   cwd "#{release_path}/vendor"
-
-    #   only_if
-
-    #   code <<-EOH
-    #   rm -f bundle
-    #   ln -s #{node['huginn']['deploy_user']['home']}/shared/vendor_bundle bundle
-    #   EOH
-    # end
-
     Chef::Log.info "Creating rake secret (if required)"
     rbenv_execute "create-rake-secret" do
       user new_resource.owner
