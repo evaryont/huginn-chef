@@ -7,7 +7,9 @@
 
   "default_attributes": {
     "huginn": {
-      "database_password": "CHANGEME"
+      "database": {
+        "password": "CHANGEME"
+      }
     }
   },
   "override_attributes": { },

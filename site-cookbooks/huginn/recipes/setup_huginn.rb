@@ -1,4 +1,4 @@
-node_database_password = node['huginn']['database_password'] # Set this here since it doesn't seem to like using the hash directly later
+# node_database_password = node['huginn']['database_password'] # Set this here since it doesn't seem to like using the hash directly later
 
 #deploy node['huginn']['deploy_user']['home'] do
 application "huginn" do
@@ -15,8 +15,8 @@ application "huginn" do
 
   environment "RAILS_ENV" => node['huginn']['rails_env'], "RBENV_VERSION" => node['huginn']['ruby_version']
 
-  migrate true
-  # migration_command "bundle exec rake db:migrate --trace"
+  migrate false
+  # migration_command "bundle exec rake db:migrate"
 
   #restart_command ""
 
@@ -104,6 +104,9 @@ application "huginn" do
       cp .env.example #{new_resource.path}/shared/dotenv
       EOH
     end
+    link "#{new_resource.release_path}/.env" do
+      to "#{new_resource.path}/shared/dotenv"
+    end
 
     Chef::Log.info "Configuring new dotenv config file"
     bash "configure-dotenv" do
@@ -113,6 +116,17 @@ application "huginn" do
       code %{
       rakesecret=$(cat rakesecret)
       #{%q{sed -i "s/^\(APP_SECRET_TOKEN\s*=\s*\).*$/\1$rakesecret/" dotenv}}
+
+      database_name=#{node['huginn']['database']['name']}
+      database_pool=#{node['huginn']['database']['pool']}
+      database_username=#{node['huginn']['database']['username']}
+      database_password=#{node['huginn']['database']['password']}
+      #database_port=#{node['huginn']['database']['port']}
+
+      #{%q{sed -i "s/^\(DATABASE_NAME\s*=\s*\).*$/\1$database_name/" dotenv}}
+      #{%q{sed -i "s/^\(DATABASE_POOL\s*=\s*\).*$/\1$database_pool/" dotenv}}
+      #{%q{sed -i "s/^\(DATABASE_USERNAME\s*=\s*\).*$/\1$database_username/" dotenv}}
+      #{%q{sed -i "s/^\(DATABASE_PASSWORD\s*=\s*\).*$/\1$database_password/" dotenv}}
 
       sed -i 's/^\(SMTP_DOMAIN\s*=\s*\).*$/\1TODO/' dotenv
       sed -i 's/^\(SMTP_USER_NAME\s*=\s*\).*$/\1TODO/' dotenv
@@ -139,10 +153,10 @@ application "huginn" do
     end
   end
 
-  symlink_before_migrate({
-    #"config/database.yml" => "config/database.yml",
-    "dotenv" => ".env"
-  })
+  # symlink_before_migrate Hash.new
+  #   #"config/database.yml" => "config/database.yml",
+  #   "dotenv" => ".env"
+  # })
 
   # create_dirs_before_symlink
 
@@ -189,27 +203,29 @@ application "huginn" do
     "config/unicorn.rb" => "config/unicorn.rb"
   })
 
-  rails do
-    bundler true
-    # bundle_command "rbenv exec bundle"
-    # bundle_command "bundle"
+  # rails do
+  #   bundler true
+  #   # bundle_command "rbenv exec bundle"
+  #   # bundle_command "bundle"
 
-    # precompile_assets true
+  #   # precompile_assets true
 
-    symlink_logs true
+  #   symlink_logs true
 
-    # symlink_before_migrate({
-    #   # "config/database.yml" => "config/database.yml",
-    #   ".ruby-version" => ".ruby-version"
-    # })
+  #   symlink_before_migrate Hash.new
 
-    database_template "database.yml.erb"
+  #   # symlink_before_migrate({
+  #   #   # "config/database.yml" => "config/database.yml",
+  #   #   ".ruby-version" => ".ruby-version"
+  #   # })
 
-    database do
-      password node_database_password
-    end
+  #   # database_template "database.yml.erb"
 
-  end
+  #   # database do
+  #   #   password node_database_password
+  #   # end
+
+  # end
 
 end
 
