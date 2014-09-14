@@ -147,8 +147,18 @@ application "huginn" do
       EOH
     end
 
+    Chef::Log.info "Running rake db:create (if required)"
+    rbenv_execute "rake-db-create" do
+      user new_resource.owner
+      cwd new_resource.release_path
 
+      ruby_version node['huginn']['ruby_version']
+      creates "#{new_resource.path}/shared/rake-db-created"
 
+      command <<-EOH
+      bundle exec rake db:create db:migrate && touch #{new_resource.path}/shared/rake-db-created
+      EOH
+    end
   end
 
   symlink_before_migrate({
