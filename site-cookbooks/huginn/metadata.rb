@@ -13,6 +13,7 @@ license 'MIT'
 
 depends 'rbenv'
 depends 'git'
+depends 'apt'
 depends 'sudo'
 depends 'application'
 depends 'application_ruby'
