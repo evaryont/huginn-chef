@@ -98,21 +98,21 @@ application "huginn" do
 
     Chef::Log.info "Creating rake secret (if required)"
     rbenv_execute "create-rake-secret" do
-      user node['huginn']['deploy_user']['name']
-      cwd release_path
+      user new_resource.owner
+      cwd new_resource.release_path
 
       ruby_version node['huginn']['ruby_version']
-      creates "#{node['huginn']['deploy_user']['home']}/shared/rakesecret"
+      creates "#{new_resource.path}/shared/rakesecret"
 
       command <<-EOH
-      bundle exec rake secret > #{node['huginn']['deploy_user']['home']}/shared/rakesecret
+      bundle exec rake secret > #{new_resource.path}/shared/rakesecret
       EOH
     end
 
     Chef::Log.info "Removing old dotenv config file"
     bash "remove-old-dotenv" do
-      user node['huginn']['deploy_user']['name']
-      cwd "#{node['huginn']['deploy_user']['home']}/shared"
+      user new_resource.owner
+      cwd "#{new_resource.path}/shared"
 
       code <<-EOH
       rm -f dotenv
@@ -121,18 +121,18 @@ application "huginn" do
 
     Chef::Log.info "Copying .env.example to dotenv"
     bash "copy-example-dotenv" do
-      user node['huginn']['deploy_user']['name']
+      user new_resource.owner
       cwd release_path
 
       code <<-EOH
-      cp .env.example #{node['huginn']['deploy_user']['home']}/shared/dotenv
+      cp .env.example #{new_resource.path}/shared/dotenv
       EOH
     end
 
     Chef::Log.info "Configuring new dotenv config file"
     bash "configure-dotenv" do
-      user node['huginn']['deploy_user']['name']
-      cwd "#{node['huginn']['deploy_user']['home']}/shared"
+      user new_resource.owner
+      cwd "#{new_resource.path}/shared"
 
       code <<-'EOH'
       #sed -i 's/^\(APP_SECRET_TOKEN\s*=\s*\).*$/\1TODO/' dotenv
@@ -205,18 +205,18 @@ application "huginn" do
   before_symlink do
     # Replace this with create_dirs_before_symlink?
     %w(config log tmp tmp/pids tmp/sockets).each do |dir|
-      directory "#{node['huginn']['deploy_user']['home']}/shared/#{dir}" do
-        owner node['huginn']['deploy_user']['name']
-        group node['huginn']['deploy_user']['group']
+      directory "#{new_resource.path}/shared/#{dir}" do
+        owner new_resource.owner
+        group new_resource.group
         recursive true
       end
     end
 
     # Procfile
     %w(unicorn.rb nginx.conf).each do |file|
-      cookbook_file "#{node['huginn']['deploy_user']['home']}/shared/config/#{file}" do
-        owner node['huginn']['deploy_user']['name']
-        group node['huginn']['deploy_user']['group']
+      cookbook_file "#{new_resource.path}/shared/config/#{file}" do
+        owner new_resource.owner
+        group new_resource.group
         action :create
       end
     end
