@@ -1,4 +1,4 @@
-default['huginn']['ruby_version'] = "1.9.3-p547"
+default['huginn']['ruby_version'] = "2.0.0-p481"
 
 default['huginn']['deploy_user']['name'] = "huginn"
 default['huginn']['deploy_user']['group'] = "huginn"
