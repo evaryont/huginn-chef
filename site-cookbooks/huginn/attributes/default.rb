@@ -16,10 +16,10 @@ default['huginn']['rails_env'] = "production"
 
 # default['huginn']['deploy_path'] = node['huginn']['deploy_user']['home']
 
-default['huginn']['packages']['default'] = %w(libxslt-dev libxml2-dev curl libmysqlclient-dev libffi-dev libssl-dev)
-default['huginn']['packages']['rhel'] = %w(libxslt-devel libxml2-devel mysql-devel curl libffi-devel openssl-devel patch)
 
 default['mysql']['server_root_password'] = node['huginn']['database_password']
+default['huginn']['packages']['default'] = %w(libxslt-dev libxml2-dev curl libffi-dev libssl-dev)
+default['huginn']['packages']['rhel'] = %w(libxslt-devel libxml2-devel curl libffi-devel openssl-devel patch)
 default['mysql']['remove_test_database'] = true
 default['mysql']['remove_anonymous_users'] = true
 

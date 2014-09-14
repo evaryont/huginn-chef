@@ -17,6 +17,7 @@
     "recipe[nodejs::nodejs_from_binary]",
     "recipe[nginx]",
     "recipe[mysql::server]",
+    "recipe[mysql::client]",
     "recipe[huginn::setup_ruby]",
     "recipe[huginn::setup_user]",
     "recipe[huginn::setup_huginn]"
