@@ -105,7 +105,7 @@ application "huginn" do
       creates "#{node['huginn']['deploy_user']['home']}/shared/rakesecret"
 
       command <<-EOH
-      bundle rake secret > #{node['huginn']['deploy_user']['home']}/shared/rakesecret
+      bundle exec rake secret > #{node['huginn']['deploy_user']['home']}/shared/rakesecret
       EOH
     end
 
