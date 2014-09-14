@@ -136,7 +136,6 @@ application "huginn" do
 
       code %{
       rakesecret=$(cat rakesecret)
-      echo $rakesecret > output
       #{%q{sed -i "s/^\(APP_SECRET_TOKEN\s*=\s*\).*$/\1$rakesecret/" dotenv}}
 
       sed -i 's/^\(SMTP_DOMAIN\s*=\s*\).*$/\1TODO/' dotenv
