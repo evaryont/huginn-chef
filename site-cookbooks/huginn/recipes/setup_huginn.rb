@@ -147,52 +147,8 @@ application "huginn" do
       EOH
     end
 
-    # bash "create-dotenv" do
-    #   cwd "#{node['huginn']['deploy_user']['home']}/shared/"
-    #   code <<-EOH
-    #   rm -f dotenv1 && touch dotenv1
-    #   echo test >> dotenv1
-    #   echo APP_SECRET_TOKEN=REPLACE_ME_NOW! >> dotenv1
-    #   echo DOMAIN=localhost:3000 >> dotenv1
-    #   echo RAILS_ENV=production >> dotenv1
-    #   echo FORCE_SSL=false >> dotenv1
-    #   echo INVITATION_CODE=try-huginn >> dotenv1
-    #   echo SMTP_DOMAIN=your-domain-here.com >> dotenv1
-    #   echo SMTP_USER_NAME=you@gmail.com >> dotenv1
-    #   echo SMTP_PASSWORD=somepassword >> dotenv1
-    #   echo SMTP_SERVER=smtp.gmail.com >> dotenv1
-    #   echo SMTP_PORT=587 >> dotenv1
-    #   echo SMTP_AUTHENTICATION=plain >> dotenv1
-    #   echo SMTP_ENABLE_STARTTLS_AUTO=true >> dotenv1
-    #   echo EMAIL_FROM_ADDRESS=from_address@gmail.com >> dotenv1
-    #   echo AGENT_LOG_LENGTH=200 >> dotenv1
-    #   echo TWITTER_OAUTH_KEY= >> dotenv1
-    #   echo TWITTER_OAUTH_SECRET= >> dotenv1
-    #   echo THIRTY_SEVEN_SIGNALS_OAUTH_KEY= >> dotenv1
-    #   echo THIRTY_SEVEN_SIGNALS_OAUTH_SECRET= >> dotenv1
-    #   echo GITHUB_OAUTH_KEY= >> dotenv1
-    #   echo GITHUB_OAUTH_SECRET= >> dotenv1
-    #   echo AWS_ACCESS_KEY_ID="your aws access key id" >> dotenv1
-    #   echo AWS_ACCESS_KEY="your aws access key" >> dotenv1
-    #   echo AWS_SANDBOX=false >> dotenv1
-    #   EOH
-    # end
 
-    # bash "before-migrate-inline" do
-    #   code <<-EOH
-    #   pwd > /home/huginn/inline-curdir.test
-    #   EOH
-    # end
 
-    # file "/home/huginn/inline-releasepath.test" do
-    #   content release_path
-    #   action :create
-    # end
-
-    # file "/home/huginn/inline-newresource.test" do
-    #   content new_resource.to_yaml
-    #   action :create
-    # end
   end
 
   symlink_before_migrate({
