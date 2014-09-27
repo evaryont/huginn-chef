@@ -195,7 +195,7 @@ application "huginn" do
     service "huginn" do
       provider Chef::Provider::Service::Upstart
       supports :restart => true, :start => true, :stop => true#, :reload => true
-      action :enable
+      action [:enable, :start]
     end
   end
 
