@@ -136,6 +136,9 @@ application "huginn" do
       sed -i 's/^\(SMTP_AUTHENTICATION\s*=\s*\).*$/\1TODO/' dotenv
       sed -i 's/^\(SMTP_ENABLE_STARTTLS_AUTO\s*=\s*\).*$/\1TODO/' dotenv
       sed -i 's/^\(EMAIL_FROM_ADDRESS\s*=\s*\).*$/\1TODO/' dotenv
+
+      echo >> dotenv
+      echo RBENV_VERSION="#{node['huginn']['ruby_version']}" >> dotenv
       }
     end
 
@@ -186,7 +189,7 @@ application "huginn" do
       ruby_version node['huginn']['ruby_version']
       cwd "#{node['huginn']['deploy_user']['home']}/current"
 
-      command "bundler exec foreman export upstart /etc/init -a huginn -u #{node['huginn']['deploy_user']['name']} -l log"
+      command "sudo -E bundle exec foreman export upstart /etc/init -a huginn -u #{node['huginn']['deploy_user']['name']} -l log"
     end
 
     service "huginn" do
