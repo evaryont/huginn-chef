@@ -63,7 +63,7 @@ application "huginn" do
     common_groups = %w{development test cucumber staging}
     bundle_command = "bundle install --path=vendor/bundle --without #{common_groups}"
 
-    rbenv_execute "Add Unicorn to Gemfile and Bundle Install" do
+    rbenv_execute "Rewrite Gemfile/Procfile to include unicorn" do
       cwd new_resource.release_path
       user new_resource.owner
 
@@ -72,8 +72,18 @@ application "huginn" do
       command %{
         echo >> Gemfile
         echo "gem 'unicorn'" >> Gemfile
-        #{bundle_command}
+
+        sed -i 's#rails server#unicorn -c config/unicorn/production.rb#' Procfile
       }
+    end
+
+    rbenv_execute "Bundle Install" do
+      cwd new_resource.release_path
+      user new_resource.owner
+
+      ruby_version node['huginn']['ruby_version']
+
+      command bundle_command
     end
 
     Chef::Log.info "Creating rake secret (if required)"
@@ -228,13 +238,11 @@ application "huginn" do
       supports :restart => true, :start => true, :stop => true#, :reload => true
       action [:enable, :start]
     end
-  end
-
-
 
     service "nginx" do
       action [:enable, :restart]
     end
+  end
 
 end
 
