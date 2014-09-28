@@ -17,8 +17,14 @@ group node['huginn']['deploy_user']['group'] do
   members node['huginn']['deploy_user']['name']
 end
 
-sudo 'huginn' do
+sudo node['huginn']['deploy_user']['name'] do
   group node['huginn']['deploy_user']['group']
   nopasswd true
-  #commands  ['service huginn restart']
+  commands [
+    '/sbin/start huginn',
+    '/sbin/stop huginn',
+    '/sbin/restart huginn',
+    '/sbin/status huginn',
+    '/opt/rbenv/shims/bundle exec foreman export'
+  ]
 end
