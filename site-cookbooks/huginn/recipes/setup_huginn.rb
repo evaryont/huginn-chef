@@ -177,25 +177,26 @@ application "huginn" do
       end
     end
 
-    # Upload config files
-    %w(nginx.conf).each do |file|
-      cookbook_file file do
-        owner new_resource.owner
-        group new_resource.group
-
-        source file
-        path "#{new_resource.path}/shared/config/#{file}"
-
-        action :create
-      end
-    end
-
     template "Write Unicorn Production Config" do
       owner new_resource.owner
       group new_resource.group
 
       source "unicorn/production.rb.erb"
       path "#{new_resource.path}/shared/config/unicorn/production.rb"
+
+      variables({
+        :huginn => node['huginn']
+      })
+
+      action :create
+    end
+
+    template "Write Nginx Config" do
+      owner new_resource.owner
+      group new_resource.group
+
+      source "nginx.conf.erb"
+      path "#{new_resource.path}/shared/config/nginx.conf"
 
       variables({
         :huginn => node['huginn']
