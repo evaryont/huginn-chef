@@ -215,13 +215,6 @@ application "huginn" do
     "config/unicorn" => "config/unicorn"
   )
 
-  #   symlinks({
-  #   # "log" => "log",
-  #   #{}"config/Procfile" => "Procfile",
-  #   #{}"config/.env" => ".env",
-  #   "config/unicorn.rb" => "config/unicorn.rb"
-  # })
-
   before_restart do
     rbenv_execute "Export huginn service" do
       ruby_version node['huginn']['ruby_version']
@@ -238,29 +231,7 @@ application "huginn" do
   end
 
 
-  # rails do
-  #   bundler true
-  #   # bundle_command "rbenv exec bundle"
-  #   # bundle_command "bundle"
 
-  #   # precompile_assets true
-
-  #   symlink_logs true
-
-  #   symlink_before_migrate Hash.new
-
-  #   # symlink_before_migrate({
-  #   #   # "config/database.yml" => "config/database.yml",
-  #   #   ".ruby-version" => ".ruby-version"
-  #   # })
-
-  #   # database_template "database.yml.erb"
-
-  #   # database do
-  #   #   password node_database_password
-  #   # end
-
-  # end
     service "nginx" do
       action [:enable, :restart]
     end
