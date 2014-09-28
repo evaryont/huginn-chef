@@ -1,10 +1,10 @@
-# node_database_password = node['huginn']['database_password'] # Set this here since it doesn't seem to like using the hash directly later
-
 deploy_revision node['huginn']['deploy_user']['home'] do
   repository node['huginn']['repository']
   revision node['huginn']['revision']
   keep_releases node['huginn']['keep_releases']
   rollback_on_error true
+  # enable_submodules true
+  # shallow_clone true
 
   user node['huginn']['deploy_user']['name']
   group node['huginn']['deploy_user']['group']
@@ -12,11 +12,6 @@ deploy_revision node['huginn']['deploy_user']['home'] do
   environment "RAILS_ENV" => node['huginn']['rails_env'], "RBENV_VERSION" => node['huginn']['ruby_version']
 
   migrate false # We handle this manually below since it doesn't work well with rbenv
-
-  #restart_command ""
-
-  # enable_submodules true
-  # shallow_clone true
 
   action :deploy #:force_deploy # or :rollback
 
@@ -172,8 +167,6 @@ deploy_revision node['huginn']['deploy_user']['home'] do
       command "bundle exec rake db:migrate"
     end
   end
-
-  # create_dirs_before_symlink
 
   before_symlink do
     Chef::Log.info "Create directory layout in shared"
