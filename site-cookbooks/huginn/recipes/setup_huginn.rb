@@ -2,7 +2,7 @@ deploy_revision node['huginn']['deploy_user']['home'] do
   repository node['huginn']['repository']
   revision node['huginn']['revision']
   keep_releases node['huginn']['keep_releases']
-  rollback_on_error true
+  rollback_on_error node['huginn']['rollback_on_error']
   # enable_submodules true
   # shallow_clone true
 
@@ -13,7 +13,7 @@ deploy_revision node['huginn']['deploy_user']['home'] do
 
   migrate false # We handle this manually below since it doesn't work well with rbenv
 
-  action :deploy #:force_deploy # or :rollback
+  action node['huginn']['deploy_action']
 
   symlink_before_migrate Hash.new
 

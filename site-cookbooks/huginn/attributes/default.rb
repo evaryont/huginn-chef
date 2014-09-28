@@ -9,6 +9,8 @@ default['huginn']['repository'] = "https://github.com/cantino/huginn.git"
 default['huginn']['branch'] = "master"
 default['huginn']['revision'] = "HEAD"
 default['huginn']['keep_releases'] = 5
+default['huginn']['rollback_on_error'] = true
+default['huginn']['deploy_action'] = :force_deploy # or :force_deploy
 
 default['huginn']['rails_env'] = "production"
 
