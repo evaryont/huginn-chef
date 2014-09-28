@@ -44,6 +44,21 @@ application "huginn" do
   # end
 
   before_migrate do
+    Chef::Log.info "Rewriting Gemfile/Procfile to use unicorn"
+    rbenv_execute "Rewrite Gemfile/Procfile to use unicorn" do
+      cwd new_resource.release_path
+      user new_resource.owner
+
+      ruby_version node['huginn']['ruby_version']
+
+      command %{
+        echo >> Gemfile
+        echo "gem 'unicorn'" >> Gemfile
+
+        sed -i 's#rails server#unicorn -c config/unicorn/production.rb#' Procfile
+      }
+    end
+
     # From https://github.com/poise/application_ruby/blob/master/providers/rails.rb
     Chef::Log.info "Running bundle install"
     directory "#{new_resource.path}/shared/vendor_bundle" do
@@ -62,20 +77,6 @@ application "huginn" do
 
     common_groups = %w{development test cucumber staging}
     bundle_command = "bundle install --path=vendor/bundle --without #{common_groups}"
-
-    rbenv_execute "Rewrite Gemfile/Procfile to include unicorn" do
-      cwd new_resource.release_path
-      user new_resource.owner
-
-      ruby_version node['huginn']['ruby_version']
-
-      command %{
-        echo >> Gemfile
-        echo "gem 'unicorn'" >> Gemfile
-
-        sed -i 's#rails server#unicorn -c config/unicorn/production.rb#' Procfile
-      }
-    end
 
     rbenv_execute "Bundle Install" do
       cwd new_resource.release_path
@@ -178,7 +179,7 @@ application "huginn" do
   # create_dirs_before_symlink
 
   before_symlink do
-    # Create directory layout in shared
+    Chef::Log.info "Create directory layout in shared"
     %w(config config/unicorn log tmp tmp/pids tmp/sockets).each do |dir|
       directory "#{new_resource.path}/shared/#{dir}" do
         owner new_resource.owner
@@ -187,6 +188,7 @@ application "huginn" do
       end
     end
 
+    Chef::Log.info "Write Unicorn Production Config"
     template "Write Unicorn Production Config" do
       owner new_resource.owner
       group new_resource.group
@@ -201,6 +203,7 @@ application "huginn" do
       action :create
     end
 
+    Chef::Log.info "Write Nginx Config"
     template "Write Nginx Config" do
       owner "root"
       group "root"
@@ -226,18 +229,21 @@ application "huginn" do
   )
 
   before_restart do
-    rbenv_execute "Export huginn service" do
+    Chef::Log.info "Export Huginn service"
+    rbenv_execute "Export Huginn service" do
       ruby_version node['huginn']['ruby_version']
       cwd "#{node['huginn']['deploy_user']['home']}/current"
 
       command "bundle exec foreman export upstart /etc/init -a huginn -u #{node['huginn']['deploy_user']['name']} -l log"
     end
 
+    Chef::Log.info "Enable/Restart Huginn service"
     service "huginn" do
       provider Chef::Provider::Service::Upstart
       action [:enable, :restart]
     end
 
+    Chef::Log.info "Enable/Restart Nginx service"
     service "nginx" do
       action [:enable, :restart]
     end
