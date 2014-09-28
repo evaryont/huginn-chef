@@ -169,6 +169,19 @@ application "huginn" do
       bundle exec rake db:create db:migrate && touch #{new_resource.path}/shared/rake-db-created
       EOH
     end
+
+    Chef::Log.info "Running rake db:seed (if required)"
+    rbenv_execute "rake-db-seed" do
+      user new_resource.owner
+      cwd new_resource.release_path
+
+      ruby_version node['huginn']['ruby_version']
+      creates "#{new_resource.path}/shared/rake-db-seeded"
+
+      command <<-EOH
+      bundle exec rake db:seed && touch #{new_resource.path}/shared/rake-db-seeded
+      EOH
+    end
   end
 
   # symlink_before_migrate Hash.new
