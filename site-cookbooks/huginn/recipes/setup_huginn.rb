@@ -63,13 +63,17 @@ application "huginn" do
     common_groups = %w{development test cucumber staging}
     bundle_command = "bundle install --path=vendor/bundle --without #{common_groups}"
 
-    rbenv_execute "bundle-install" do
+    rbenv_execute "Add Unicorn to Gemfile and Bundle Install" do
       cwd new_resource.release_path
       user new_resource.owner
 
       ruby_version node['huginn']['ruby_version']
 
-      command bundle_command
+      command %{
+        echo >> Gemfile
+        echo "gem 'unicorn'" >> Gemfile
+        #{bundle_command}
+      }
     end
 
     Chef::Log.info "Creating rake secret (if required)"
@@ -164,8 +168,8 @@ application "huginn" do
   # create_dirs_before_symlink
 
   before_symlink do
-    # Replace this with create_dirs_before_symlink?
-    %w(config log tmp tmp/pids tmp/sockets).each do |dir|
+    # Create directory layout in shared
+    %w(config config/unicorn log tmp tmp/pids tmp/sockets).each do |dir|
       directory "#{new_resource.path}/shared/#{dir}" do
         owner new_resource.owner
         group new_resource.group
@@ -173,16 +177,49 @@ application "huginn" do
       end
     end
 
-    # Procfile
-    %w(unicorn.rb nginx.conf).each do |file|
-      cookbook_file "#{new_resource.path}/shared/config/#{file}" do
+    # Upload config files
+    %w(nginx.conf).each do |file|
+      cookbook_file file do
         owner new_resource.owner
         group new_resource.group
+
+        source file
+        path "#{new_resource.path}/shared/config/#{file}"
+
         action :create
       end
     end
 
+    template "Write Unicorn Production Config" do
+      owner new_resource.owner
+      group new_resource.group
+
+      source "unicorn/production.rb.erb"
+      path "#{new_resource.path}/shared/config/unicorn/production.rb"
+
+      variables({
+        :huginn => node['huginn']
+      })
+
+      action :create
+    end
   end
+
+  symlinks(
+    # Default
+    "system" => "public/system",
+    "pids" => "tmp/pids",
+    "log" => "log",
+    # Custom
+    "config/unicorn" => "config/unicorn"
+  )
+
+  #   symlinks({
+  #   # "log" => "log",
+  #   #{}"config/Procfile" => "Procfile",
+  #   #{}"config/.env" => ".env",
+  #   "config/unicorn.rb" => "config/unicorn.rb"
+  # })
 
   before_restart do
     rbenv_execute "Export huginn service" do
@@ -199,12 +236,6 @@ application "huginn" do
     end
   end
 
-  symlinks({
-    # "log" => "log",
-    #{}"config/Procfile" => "Procfile",
-    #{}"config/.env" => ".env",
-    "config/unicorn.rb" => "config/unicorn.rb"
-  })
 
   # rails do
   #   bundler true
