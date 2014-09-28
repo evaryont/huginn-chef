@@ -11,8 +11,7 @@ deploy_revision node['huginn']['deploy_user']['home'] do
 
   environment "RAILS_ENV" => node['huginn']['rails_env'], "RBENV_VERSION" => node['huginn']['ruby_version']
 
-  migrate false
-  # migration_command "bundle exec rake db:migrate"
+  migrate false # We handle this manually below since it doesn't work well with rbenv
 
   #restart_command ""
 
@@ -21,6 +20,7 @@ deploy_revision node['huginn']['deploy_user']['home'] do
 
   action :deploy #:force_deploy # or :rollback
 
+  symlink_before_migrate Hash.new
 
   before_migrate do
     Chef::Log.info "Rewriting Gemfile/Procfile to use unicorn"
@@ -161,12 +161,17 @@ deploy_revision node['huginn']['deploy_user']['home'] do
       bundle exec rake db:seed && touch #{new_resource.deploy_to}/shared/rake-db-seeded
       EOH
     end
-  end
 
-  # symlink_before_migrate Hash.new
-  #   #"config/database.yml" => "config/database.yml",
-  #   "dotenv" => ".env"
-  # })
+    Chef::Log.info "Running rake db:migrate"
+    rbenv_execute "rake-db-migrate" do
+      user new_resource.user
+      cwd release_path
+
+      ruby_version node['huginn']['ruby_version']
+
+      command "bundle exec rake db:migrate"
+    end
+  end
 
   # create_dirs_before_symlink
 
