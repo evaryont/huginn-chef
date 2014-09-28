@@ -15,7 +15,7 @@ deploy_revision node['huginn']['deploy_user']['home'] do
 
   action node['huginn']['deploy_action']
 
-  symlink_before_migrate Hash.new
+  symlink_before_migrate Hash.new # Disable default
 
   before_migrate do
     Chef::Log.info "Rewriting Gemfile/Procfile to use unicorn"
