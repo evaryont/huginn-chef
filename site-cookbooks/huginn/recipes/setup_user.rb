@@ -24,7 +24,6 @@ sudo node['huginn']['deploy_user']['name'] do
     '/sbin/start huginn',
     '/sbin/stop huginn',
     '/sbin/restart huginn',
-    '/sbin/status huginn',
-    '/opt/rbenv/shims/bundle exec foreman export'
+    '/sbin/status huginn'
   ]
 end

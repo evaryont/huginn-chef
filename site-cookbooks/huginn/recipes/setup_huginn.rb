@@ -185,11 +185,11 @@ application "huginn" do
   end
 
   before_restart do
-    rbenv_execute "export huginn service" do
+    rbenv_execute "Export huginn service" do
       ruby_version node['huginn']['ruby_version']
       cwd "#{node['huginn']['deploy_user']['home']}/current"
 
-      command "sudo -E bundle exec foreman export upstart /etc/init -a huginn -u #{node['huginn']['deploy_user']['name']} -l log"
+      command "bundle exec foreman export upstart /etc/init -a huginn -u #{node['huginn']['deploy_user']['name']} -l log"
     end
 
     service "huginn" do
