@@ -24,6 +24,7 @@ sudo node['huginn']['deploy_user']['name'] do
     '/sbin/start huginn',
     '/sbin/stop huginn',
     '/sbin/restart huginn',
-    '/sbin/status huginn'
+    '/sbin/status huginn',
+    '/usr/sbin/service nginx'
   ]
 end

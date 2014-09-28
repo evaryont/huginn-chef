@@ -192,11 +192,11 @@ application "huginn" do
     end
 
     template "Write Nginx Config" do
-      owner new_resource.owner
-      group new_resource.group
+      owner "root"
+      group "root"
 
       source "nginx.conf.erb"
-      path "#{new_resource.path}/shared/config/nginx.conf"
+      path "/etc/nginx/conf.d/huginn.conf"
 
       variables({
         :huginn => node['huginn']
@@ -261,6 +261,9 @@ application "huginn" do
   #   # end
 
   # end
+    service "nginx" do
+      action [:enable, :restart]
+    end
 
 end
 

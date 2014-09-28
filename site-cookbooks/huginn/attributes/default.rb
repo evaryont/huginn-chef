@@ -35,6 +35,12 @@ default['mysql']['remove_anonymous_users'] = true
 
 default['authorization']['sudo']['include_sudoers_d'] = true
 
+# See https://supermarket.getchef.com/cookbooks/nginx for options
+default['nginx']['user'] = node['huginn']['deploy_user']['name']
+default['nginx']['group'] = node['huginn']['deploy_user']['group']
+# default['nginx']['worker_processes'] = 2
+default['nginx']['worker_connections'] = "1024"
+
 #default['huginn']['user'] = "huginn"
 #default['huginn']['group'] = "huginn"
 #default['huginn']['env']['invitation_code'] = "try-huginn-secretly"
