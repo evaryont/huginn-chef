@@ -1,35 +1,26 @@
-#worker_process 2;
-user <%= @huginn['deploy_user']['name'] %> <%= @huginn['deploy_user']['group'] %>;
+#events {
+#  accept_mutex on;
+#}
 
-events {
-  worker_connections 1024;
-  accept_mutex on;
+upstream huginn_server {
+  server unix:<%= @huginn['deploy_user']['home'] %>/shared/tmp/sockets/unicorn.sock;
 }
 
-http {
-  types_hash_max_size 2048;
-  include    mime.types;
-
-  upstream huginn_server {
-    server unix:<%= @huginn['deploy_user']['home'] %>/shared/tmp/sockets/unicorn.sock;
-  }
-
-  server {
-    listen 80;
-    server_name _;
-    keepalive_timeout 5;
+server {
+  listen 80;
+  server_name _;
+  keepalive_timeout 5;
+  root <%= @huginn['deploy_user']['home'] %>/current/public;
+  try_files $uri/index.html $uri.html $uri @app;
+  error_page 500 502 503 504 /500.html;
+  location = /500.html {
     root <%= @huginn['deploy_user']['home'] %>/current/public;
-    try_files $uri/index.html $uri.html $uri @app;
-    error_page 500 502 503 504 /500.html;
-    location = /500.html {
-      root <%= @huginn['deploy_user']['home'] %>/current/public;
-    }
-    location @app {
-      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      proxy_set_header X-Forwarded-Proto $scheme;
-      proxy_set_header Host $http_host;
-      proxy_redirect off;
-      proxy_pass http://huginn_server;
-    }
+  }
+  location @app {
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Host $http_host;
+    proxy_redirect off;
+    proxy_pass http://huginn_server;
   }
 }
