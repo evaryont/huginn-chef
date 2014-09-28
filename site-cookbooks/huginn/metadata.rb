@@ -7,7 +7,7 @@ maintainer "Glenn 'devalias' Grant"
 maintainer_email 'glenn@devalias.net'
 
 supports 'centos'
-#supports 'ubuntu', '>= x.yz'
+supports 'ubuntu'
 
 license 'MIT'
 
