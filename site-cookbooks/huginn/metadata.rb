@@ -16,6 +16,3 @@ license 'MIT'
 
 depends 'rbenv'
 depends 'sudo'
-depends 'application'
-depends 'application_ruby'
-#depends 'application_nginx'

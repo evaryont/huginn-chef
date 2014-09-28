@@ -1,16 +1,12 @@
 # node_database_password = node['huginn']['database_password'] # Set this here since it doesn't seem to like using the hash directly later
 
-#deploy node['huginn']['deploy_user']['home'] do
-application "huginn" do
-  path node['huginn']['deploy_user']['home']
-
+deploy_revision node['huginn']['deploy_user']['home'] do
   repository node['huginn']['repository']
   revision node['huginn']['revision']
-  #keep_releases node['huginn']['keep_releases']
-  rollback_on_error false # true TODO CHANGEME
+  keep_releases node['huginn']['keep_releases']
+  rollback_on_error true
 
-  #user node['huginn']['deploy_user']['name']
-  owner node['huginn']['deploy_user']['name']
+  user node['huginn']['deploy_user']['name']
   group node['huginn']['deploy_user']['group']
 
   environment "RAILS_ENV" => node['huginn']['rails_env'], "RBENV_VERSION" => node['huginn']['ruby_version']
@@ -21,33 +17,16 @@ application "huginn" do
   #restart_command ""
 
   # enable_submodules true
-  # migrate true
-  # migration_command "rake db:migrate"
-  # environment "RAILS_ENV" => "production", "OTHER_ENV" => "foo"
   # shallow_clone true
 
   action :deploy #:force_deploy # or :rollback
-  # restart_command "touch tmp/restart.txt"
-  # git_ssh_wrapper "wrap-ssh4git.sh"
-  # scm_provider Chef::Provider::Git # is the default, for svn: Chef::Provider::Subversion
 
-  # before_migrate do
-
-  #   # rbenv_execute "create/seed db" do
-  #   #   ruby_version node['huginn']['ruby_version']
-  #   #   cwd "#{node['huginn']['deploy_user']['home']}/current"
-  #   #   command <<-EOH
-  #   #     bundler exec rake db:create && bundler exec rake db:migrate && bundler exec rake db:seed && echo 1 > #{node['huginn']['deploy_user']['home']}/shared/RAKE-DB-CREATED
-  #   #   EOH
-  #   # end
-
-  # end
 
   before_migrate do
     Chef::Log.info "Rewriting Gemfile/Procfile to use unicorn"
     rbenv_execute "Rewrite Gemfile/Procfile to use unicorn" do
-      cwd new_resource.release_path
-      user new_resource.owner
+      cwd release_path
+      user new_resource.user
 
       ruby_version node['huginn']['ruby_version']
 
@@ -61,26 +40,26 @@ application "huginn" do
 
     # From https://github.com/poise/application_ruby/blob/master/providers/rails.rb
     Chef::Log.info "Running bundle install"
-    directory "#{new_resource.path}/shared/vendor_bundle" do
-      owner new_resource.owner
+    directory "#{new_resource.deploy_to}/shared/vendor_bundle" do
+      owner new_resource.user
       group new_resource.group
       mode '0755'
     end
-    directory "#{new_resource.release_path}/vendor" do
-      owner new_resource.owner
+    directory "#{release_path}/vendor" do
+      owner new_resource.user
       group new_resource.group
       mode '0755'
     end
-    link "#{new_resource.release_path}/vendor/bundle" do
-      to "#{new_resource.path}/shared/vendor_bundle"
+    link "#{release_path}/vendor/bundle" do
+      to "#{new_resource.deploy_to}/shared/vendor_bundle"
     end
 
     common_groups = %w{development test cucumber staging}
     bundle_command = "bundle install --path=vendor/bundle --without #{common_groups}"
 
     rbenv_execute "Bundle Install" do
-      cwd new_resource.release_path
-      user new_resource.owner
+      cwd release_path
+      user new_resource.user
 
       ruby_version node['huginn']['ruby_version']
 
@@ -89,21 +68,21 @@ application "huginn" do
 
     Chef::Log.info "Creating rake secret (if required)"
     rbenv_execute "create-rake-secret" do
-      user new_resource.owner
-      cwd new_resource.release_path
+      user new_resource.user
+      cwd release_path
 
       ruby_version node['huginn']['ruby_version']
-      creates "#{new_resource.path}/shared/rakesecret"
+      creates "#{new_resource.deploy_to}/shared/rakesecret"
 
       command <<-EOH
-      bundle exec rake secret > #{new_resource.path}/shared/rakesecret
+      bundle exec rake secret > #{new_resource.deploy_to}/shared/rakesecret
       EOH
     end
 
     Chef::Log.info "Removing old dotenv config file"
     bash "remove-old-dotenv" do
-      user new_resource.owner
-      cwd "#{new_resource.path}/shared"
+      user new_resource.user
+      cwd "#{new_resource.deploy_to}/shared"
 
       code <<-EOH
       rm -f dotenv
@@ -112,21 +91,21 @@ application "huginn" do
 
     Chef::Log.info "Copying .env.example to dotenv"
     bash "copy-example-dotenv" do
-      user new_resource.owner
+      user new_resource.user
       cwd release_path
 
       code <<-EOH
-      cp .env.example #{new_resource.path}/shared/dotenv
+      cp .env.example #{new_resource.deploy_to}/shared/dotenv
       EOH
     end
-    link "#{new_resource.release_path}/.env" do
-      to "#{new_resource.path}/shared/dotenv"
+    link "#{release_path}/.env" do
+      to "#{new_resource.deploy_to}/shared/dotenv"
     end
 
     Chef::Log.info "Configuring new dotenv config file"
     bash "configure-dotenv" do
-      user new_resource.owner
-      cwd "#{new_resource.path}/shared"
+      user new_resource.user
+      cwd "#{new_resource.deploy_to}/shared"
 
       code %{
       rakesecret=$(cat rakesecret)
@@ -159,27 +138,27 @@ application "huginn" do
 
     Chef::Log.info "Running rake db:create (if required)"
     rbenv_execute "rake-db-create" do
-      user new_resource.owner
-      cwd new_resource.release_path
+      user new_resource.user
+      cwd release_path
 
       ruby_version node['huginn']['ruby_version']
-      creates "#{new_resource.path}/shared/rake-db-created"
+      creates "#{new_resource.deploy_to}/shared/rake-db-created"
 
       command <<-EOH
-      bundle exec rake db:create db:migrate && touch #{new_resource.path}/shared/rake-db-created
+      bundle exec rake db:create db:migrate && touch #{new_resource.deploy_to}/shared/rake-db-created
       EOH
     end
 
     Chef::Log.info "Running rake db:seed (if required)"
     rbenv_execute "rake-db-seed" do
-      user new_resource.owner
-      cwd new_resource.release_path
+      user new_resource.user
+      cwd release_path
 
       ruby_version node['huginn']['ruby_version']
-      creates "#{new_resource.path}/shared/rake-db-seeded"
+      creates "#{new_resource.deploy_to}/shared/rake-db-seeded"
 
       command <<-EOH
-      bundle exec rake db:seed && touch #{new_resource.path}/shared/rake-db-seeded
+      bundle exec rake db:seed && touch #{new_resource.deploy_to}/shared/rake-db-seeded
       EOH
     end
   end
@@ -194,8 +173,8 @@ application "huginn" do
   before_symlink do
     Chef::Log.info "Create directory layout in shared"
     %w(config config/unicorn log tmp tmp/pids tmp/sockets).each do |dir|
-      directory "#{new_resource.path}/shared/#{dir}" do
-        owner new_resource.owner
+      directory "#{new_resource.deploy_to}/shared/#{dir}" do
+        owner new_resource.user
         group new_resource.group
         recursive true
       end
@@ -203,11 +182,11 @@ application "huginn" do
 
     Chef::Log.info "Write Unicorn Production Config"
     template "Write Unicorn Production Config" do
-      owner new_resource.owner
+      owner new_resource.user
       group new_resource.group
 
       source "unicorn/production.rb.erb"
-      path "#{new_resource.path}/shared/config/unicorn/production.rb"
+      path "#{new_resource.deploy_to}/shared/config/unicorn/production.rb"
 
       variables({
         :huginn => node['huginn']
@@ -245,9 +224,9 @@ application "huginn" do
     Chef::Log.info "Export Huginn service"
     rbenv_execute "Export Huginn service" do
       ruby_version node['huginn']['ruby_version']
-      cwd "#{node['huginn']['deploy_user']['home']}/current"
+      cwd release_path
 
-      command "bundle exec foreman export upstart /etc/init -a huginn -u #{node['huginn']['deploy_user']['name']} -l log"
+      command "bundle exec foreman export upstart /etc/init -a huginn -u #{new_resource.user} -l log"
     end
 
     Chef::Log.info "Enable/Restart Huginn service"
@@ -263,33 +242,3 @@ application "huginn" do
   end
 
 end
-
-# application "huginn" do
-#   path "#{node['huginn']['deploy_user']['home']}/huginn"
-#   repository node['huginn']['repository']
-#   checkout_branch node['huginn']['branch']
-#   #revision node['huginn']['branch']
-
-#   keep_releases node['huginn']['keep_releases']
-#   rollback_on_error true
-
-#   owner node['huginn']['deploy_user']['name']
-#   group node['huginn']['deploy_user']['group']
-
-#   rails do
-
-#   end
-
-#   unicorn do
-#     bundler true
-#     preload_app true
-#     worker_processes 2
-#     working_directory "#{node['huginn']['deploy_user']['home']}/huginn/current"
-#   end
-
-#   nginx_load_balancer do
-#     init_style "upstart"
-#     #only_if { node['roles'].include?('my-app_load_balancer') }
-#     set_host_header true
-#   end
-# end
