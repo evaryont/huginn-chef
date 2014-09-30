@@ -43,6 +43,4 @@ default['nginx']['group'] = node['huginn']['deploy_user']['group']
 # default['nginx']['worker_processes'] = 2
 default['nginx']['worker_connections'] = "1024"
 
-#default['huginn']['user'] = "huginn"
-#default['huginn']['group'] = "huginn"
-#default['huginn']['env']['invitation_code'] = "try-huginn-secretly"
+default['huginn']['env'] = {}
