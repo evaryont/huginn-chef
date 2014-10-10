@@ -1,4 +1,4 @@
-name 'Huginn'
+name 'huginn'
 description 'Cookbook for deploying Huginn'
 
 version '0.0.1'

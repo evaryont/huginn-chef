@@ -12,35 +12,35 @@ default['huginn']['keep_releases'] = 5
 default['huginn']['rollback_on_error'] = true
 default['huginn']['deploy_action'] = :deploy # or :force_deploy
 
-default['huginn']['rails_env'] = "production"
-
 # default['huginn']['deploy_path'] = node['huginn']['deploy_user']['home']
 
 default['huginn']['packages']['default'] = %w(libxslt-dev libxml2-dev curl libffi-dev libssl-dev)
 default['huginn']['packages']['rhel'] = %w(libxslt-devel libxml2-devel curl libffi-devel openssl-devel patch)
 
-# default['huginn']['database']['adapter'] = "mysql2"
-# default['huginn']['database']['encoding'] = "utf8"
-# default['huginn']['database']['reconnect'] = "true"
-default['huginn']['database']['name'] = "huginn"
-default['huginn']['database']['pool'] = 5
-default['huginn']['database']['username'] = "root"
-default['huginn']['database']['password'] = "Ch4ng3M3!"
-# default['huginn']['database']['host'] = "your-domain-here.com"
-default['huginn']['database']['port'] = "3306"
-# default['huginn']['database']['socket'] = "/tmp/mysql.sock"
-
-default['mysql']['server_root_password'] = node['huginn']['database']['password']
-default['mysql']['port'] = node['huginn']['database']['port']
-default['mysql']['remove_test_database'] = true
-default['mysql']['remove_anonymous_users'] = true
-
-default['authorization']['sudo']['include_sudoers_d'] = true
+force_default['authorization']['sudo']['include_sudoers_d'] = true
 
 # See https://supermarket.getchef.com/cookbooks/nginx for options
-default['nginx']['user'] = node['huginn']['deploy_user']['name']
-default['nginx']['group'] = node['huginn']['deploy_user']['group']
-# default['nginx']['worker_processes'] = 2
-default['nginx']['worker_connections'] = "1024"
+force_default['nginx']['user'] = node['huginn']['deploy_user']['name']
+force_default['nginx']['group'] = node['huginn']['deploy_user']['group']
+# force_default['nginx']['worker_processes'] = 2
+force_default['nginx']['worker_connections'] = "1024"
 
-default['huginn']['env'] = {}
+default['huginn']['env'] = {
+    "APP_SECRET_TOKEN" => "$(cat '#{node['huginn']['deploy_user']['home']}/shared/rakesecret')",
+    "DATABASE_NAME" => "huginn",
+    "DATABASE_USERNAME" => "root",
+    "DATABASE_PASSWORD" => "Ch4ng3M3!",
+    "DATABASE_POOL" => "5",
+    "DATABASE_ADAPTER" => "mysql2",
+    "DATABASE_ENCODING" => "utf8mb4",
+    "DATABASE_RECONNECT" => "true",
+    "DATABASE_HOST" => "localhost",
+    "DATABASE_PORT" => "3306",
+    "RBENV_VERSION" => node['huginn']['ruby_version'],
+    "RAILS_ENV" => "production"
+}
+
+force_default['mysql']['server_root_password'] = node['huginn']['env']['DATABASE_PASSWORD']
+force_default['mysql']['port'] = node['huginn']['env']['DATABASE_PORT']
+force_default['mysql']['remove_test_database'] = true
+force_default['mysql']['remove_anonymous_users'] = true
