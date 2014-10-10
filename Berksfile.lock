@@ -1,5 +1,8 @@
 DEPENDENCIES
+  apt
   git (~> 4.0.2)
+  huginn
+    path: site-cookbooks/huginn
   mysql (~> 5.3.6)
   nginx (~> 2.7.4)
   nodejs (~> 2.1.0)
@@ -25,6 +28,9 @@ GRAPH
     windows (>= 0.0.0)
     yum (~> 3.0)
     yum-epel (>= 0.0.0)
+  huginn (0.0.1)
+    rbenv (>= 0.0.0)
+    sudo (>= 0.0.0)
   mysql (5.3.6)
     yum-mysql-community (>= 0.0.0)
   nginx (2.7.4)
